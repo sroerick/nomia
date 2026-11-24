@@ -382,7 +382,7 @@ let test_first_sync_layout () =
         (json_string "schema" state);
       Alcotest.(check string) "state client" "opencode"
         (json_string "client" state);
-      Alcotest.(check string) "state release" "0.1.0"
+      Alcotest.(check string) "state release" "0.2.0"
         (json_string "release" state);
       let digest = json_string "digest" state in
       Alcotest.(check bool) "state digest is sha256" true

@@ -201,14 +201,14 @@ let test_saguaro_real_corpus () =
     (List.assoc template_rel source.M.files);
   let header =
     Printf.sprintf
-      "<!-- nomia:generated release=0.1.0 digest=%s -->\n\
+      "<!-- nomia:generated release=0.2.0 digest=%s -->\n\
        <!-- Edit the reviewed nomia source, not this generated persona. -->"
       policy_set.Co.digest
   in
   Alcotest.(check bool) "generated block header present" true
     (contains_sub persona header);
   Alcotest.(check bool) "organization baseline heading present" true
-    (contains_sub persona "## Organization baseline (release 0.1.0)");
+    (contains_sub persona "## Organization baseline (release 0.2.0)");
   List.iter
     (fun (resolved : Co.resolved_rule) ->
       let rule = resolved.rule in
@@ -261,7 +261,7 @@ let test_saguaro_real_corpus () =
     (C.to_string policy ^ "\n");
   Alcotest.(check string) "policy schema" "nomia-saguaro/v1"
     (json_string "schema" policy);
-  Alcotest.(check string) "policy release" "0.1.0" (json_string "release" policy);
+  Alcotest.(check string) "policy release" "0.2.0" (json_string "release" policy);
   Alcotest.(check string) "policy compiler" "agentctl/1"
     (json_string "compiler" policy);
   Alcotest.(check string) "policy digest" policy_set.Co.digest

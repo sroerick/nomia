@@ -1,5 +1,5 @@
 schema: nomia/v1
-release: 0.1.0
+release: 0.2.0
 compiler: agentctl/1
 description: >
   The reviewed organization baseline for coding and operating agents. The

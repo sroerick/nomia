@@ -234,7 +234,7 @@ let test_erde_no_role () =
     (String.length framework > String.length header
     && String.sub framework 0 (String.length header) = header);
   Alcotest.(check bool) "org-core carries the organization heading" true
-    (contains_sub org_core "# Organization agent policy (release 0.1.0)");
+    (contains_sub org_core "# Organization agent policy (release 0.2.0)");
   Alcotest.(check bool) "org-core carries rules by id" true
     (contains_sub org_core "## engineering.verify-change (must, final)");
   Alcotest.(check bool) "org-core has no memory contract" false
@@ -253,7 +253,7 @@ let test_erde_no_role () =
   assert_ascending framework
     [
       header;
-      "# Organization agent policy (release 0.1.0)";
+      "# Organization agent policy (release 0.2.0)";
       "## Shared harness and memory lifecycle contract";
       memory_text;
       "# Procedures";
@@ -269,7 +269,7 @@ let test_erde_no_role () =
     (C.to_string policy ^ "\n");
   Alcotest.(check string) "policy schema" "nomia-erde/v1"
     (json_string "schema" policy);
-  Alcotest.(check string) "policy release" "0.1.0" (json_string "release" policy);
+  Alcotest.(check string) "policy release" "0.2.0" (json_string "release" policy);
   Alcotest.(check string) "policy compiler" "agentctl/1"
     (json_string "compiler" policy);
   Alcotest.(check string) "policy digest" policy_set.Co.digest

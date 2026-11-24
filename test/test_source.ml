@@ -104,7 +104,7 @@ let hash_ok hash =
 let test_real_corpus_loads () =
   let src = load_ok ".." in
   Alcotest.(check string) "policy schema" "nomia/v1" src.policy.schema;
-  Alcotest.(check string) "policy release" "0.1.0" src.policy.release;
+  Alcotest.(check string) "policy release" "0.2.0" src.policy.release;
   Alcotest.(check string) "policy compiler" "agentctl/1" src.policy.compiler;
   Alcotest.(check int) "policy maintainers" 3
     (List.length src.policy.maintainers);

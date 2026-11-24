@@ -490,7 +490,7 @@ let test_resource_bytes_match_render () =
         (fun server ->
           initialize server;
           let resources = resources server in
-          let release = "0.1.0" in
+          let release = "0.2.0" in
           let base = "org-policy://releases/" ^ release in
           let manifest_uri = base ^ "/manifest" in
           let core_uri = base ^ "/core" in
@@ -646,7 +646,7 @@ let test_protocol_errors () =
             request server "resources/read"
               ~params:
                 (`Assoc
-                  [ ("uri", `String "org-policy://releases/0.1.0/nope") ])
+                  [ ("uri", `String "org-policy://releases/0.2.0/nope") ])
           in
           Alcotest.(check int) "unknown resource is -32602" (-32602)
             (error_code unknown_resource);
@@ -718,7 +718,7 @@ let test_tool_bounded_and_pinned () =
           Alcotest.(check string) "tool digest equals manifest digest" digest
             (string_field "digest" manifest);
           let release = Option.get (member "release" payload) in
-          Alcotest.(check string) "tool release version" "0.1.0"
+          Alcotest.(check string) "tool release version" "0.2.0"
             (string_field "version" release);
           Alcotest.(check string) "tool role" "implementer"
             (string_field "role" payload);
@@ -730,7 +730,7 @@ let test_tool_bounded_and_pinned () =
             (string_field "id" adapter);
           assert_no_secret_fields "resolve_policy payload" payload;
           let matching = tool_payload server
-              (`Assoc [ ("release", `String "0.1.0") ])
+              (`Assoc [ ("release", `String "0.2.0") ])
           in
           Alcotest.(check string) "pinned release accepted" digest
             (string_field "digest" matching);
@@ -860,7 +860,7 @@ let test_release_pin () =
         (fun server ->
           initialize server;
           let manifest =
-            read_text server "org-policy://releases/0.1.0/manifest"
+            read_text server "org-policy://releases/0.2.0/manifest"
           in
           Alcotest.(check string) "pinned digest manifest bytes"
             (Canonical.to_string cached.S.manifest ^ "\n")
@@ -907,7 +907,7 @@ let test_cached_fallback () =
           ]
         (fun server ->
           initialize server;
-          let release = "0.1.0" in
+          let release = "0.2.0" in
           let base = "org-policy://releases/" ^ release in
           let manifest = read_text server (base ^ "/manifest") in
           let explain = read_text server (base ^ "/explain") in
@@ -969,7 +969,7 @@ let test_offline_environment_only () =
           let response = request server "resources/read"
               ~params:
                 (`Assoc
-                  [ ("uri", `String "org-policy://releases/0.1.0/manifest") ])
+                  [ ("uri", `String "org-policy://releases/0.2.0/manifest") ])
           in
           let text =
             match member "result" response with

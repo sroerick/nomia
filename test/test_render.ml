@@ -143,7 +143,7 @@ let test_generic_real_corpus () =
   let agents = contents_of "AGENTS.md" artifacts in
   let header =
     Printf.sprintf
-      "<!-- nomia:generated release=0.1.0 digest=%s -->\n\
+      "<!-- nomia:generated release=0.2.0 digest=%s -->\n\
        <!-- Edit the reviewed nomia source, not this generated file. -->"
       policy_set.Co.digest
   in
@@ -151,7 +151,7 @@ let test_generic_real_corpus () =
     (String.length agents > String.length header
     && String.sub agents 0 (String.length header) = header);
   Alcotest.(check bool) "organization heading present" true
-    (contains_sub agents "# Organization agent policy (release 0.1.0)");
+    (contains_sub agents "# Organization agent policy (release 0.2.0)");
   Alcotest.(check bool) "role heading present" true
     (contains_sub agents "# Role: implementer");
   Alcotest.(check bool) "output contract present" true

@@ -1,7 +1,7 @@
-<!-- nomia:generated release=0.1.0 digest=sha256:82f2290cd60c1ff3e13109ea6b5c37e53ba2e3055db7150970b47230b529aff5 -->
+<!-- nomia:generated release=0.2.0 digest=sha256:14183adde1c22a02924466584e29c26466b4d8f0b7874d576d604d904c63c32f -->
 <!-- Edit the reviewed nomia source, not this generated file. -->
 
-# Organization agent policy (release 0.1.0)
+# Organization agent policy (release 0.2.0)
 
 ## engineering.independent-review (must, final)
 Where the delivery process requires review, the reviewer must be independent

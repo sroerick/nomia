@@ -302,7 +302,7 @@ let test_explain_json_matches_render () =
       in
       Alcotest.(check int) "text explain exits 0" 0 text.code;
       Alcotest.(check bool) "text explain names release" true
-        (contains_sub text.stdout "release: 0.1.0"))
+        (contains_sub text.stdout "release: 0.2.0"))
 
 let test_bad_selection_leaves_out_absent () =
   Unix.putenv "NOMIA_TODAY" "2030-01-01";
