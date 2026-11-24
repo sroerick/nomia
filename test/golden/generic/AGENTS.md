@@ -1,4 +1,4 @@
-<!-- nomia:generated release=0.1.0 digest=sha256:cf8387380a21809fc42ebbfdebb8e652f9e5dfe040bf62f67f6e9541c8cb629a -->
+<!-- nomia:generated release=0.1.0 digest=sha256:82f2290cd60c1ff3e13109ea6b5c37e53ba2e3055db7150970b47230b529aff5 -->
 <!-- Edit the reviewed nomia source, not this generated file. -->
 
 # Organization agent policy (release 0.1.0)
@@ -57,6 +57,15 @@ failure is not excused because the harness also failed.
 
 Delivery requires gate evidence, not a claim that verification probably
 happened. Do not mark work complete while a required check is red or unrun.
+
+## engineering.worktree-isolation (must, final)
+Make branches in a git worktree you created (`git worktree add <dir> -b
+<branch>`), never by switching the branch of a checkout someone else may be
+working in. People and agents share checkouts; a checkout or switch there moves
+their next commit onto your branch without telling them.
+
+Before you commit or push, confirm `git branch --show-current` is the branch you
+mean, and push an explicit refspec. Remove your worktree when the branch lands.
 
 ## knowledge.attributed-store (must, final)
 Preserve durable knowledge only through its granted, attributed store. A memory

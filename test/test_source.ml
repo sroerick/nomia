@@ -108,7 +108,7 @@ let test_real_corpus_loads () =
   Alcotest.(check string) "policy compiler" "agentctl/1" src.policy.compiler;
   Alcotest.(check int) "policy maintainers" 3
     (List.length src.policy.maintainers);
-  Alcotest.(check int) "rule count" 10 (List.length src.rules);
+  Alcotest.(check int) "rule count" 11 (List.length src.rules);
   Alcotest.(check int) "role count" 2 (List.length src.roles);
   Alcotest.(check int) "adapter count" 4 (List.length src.adapters);
   Alcotest.(check int) "skill count" 3 (List.length src.skills);
@@ -131,7 +131,7 @@ let test_real_corpus_loads () =
     (List.for_all (fun (r : M.rule) -> contains_sub r.source "rules/") src.rules);
   validate_ok src;
   let validated = load_and_validate_ok ".." in
-  Alcotest.(check int) "load_and_validate returns the same rules" 10
+  Alcotest.(check int) "load_and_validate returns the same rules" 11
     (List.length validated.rules)
 
 let test_sha256_hex () =

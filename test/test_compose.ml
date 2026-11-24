@@ -952,7 +952,7 @@ let test_absolute_repository_location_does_not_change_explain () =
 
 let test_resolve_root () =
   let policy_set = resolve_root_ok ".." in
-  Alcotest.(check int) "resolve_root loads the real corpus" 10
+  Alcotest.(check int) "resolve_root loads the real corpus" 11
     (List.length policy_set.rules);
   Alcotest.(check string) "resolve_root records today" today policy_set.today;
   Alcotest.(check bool) "resolve_root sets a release digest" true
