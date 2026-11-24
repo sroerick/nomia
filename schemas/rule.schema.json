@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "nomia/rule.schema.json",
+  "title": "nomia rule front matter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "revision", "owner", "strength", "scope", "final", "kind"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(\\.[a-z0-9-]+)+$"},
+    "revision": {"type": "integer", "minimum": 1},
+    "owner": {"type": "string", "minLength": 1},
+    "strength": {"enum": ["must", "should", "may"]},
+    "scope": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "final": {"type": "boolean"},
+    "kind": {"enum": ["instruction", "procedure", "knowledge", "capability"]},
+    "title": {"type": "string"},
+    "enforcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "controls"],
+      "properties": {
+        "class": {"enum": ["advisory", "gate", "consent", "prohibition"]},
+        "controls": {
+          "type": "array",
+          "items": {
+            "enum": ["instruction", "skill", "ci-verification", "ci-review",
+                     "evidence-verifier", "host-hook", "wrapper", "filesystem",
+                     "network", "tool", "sandbox", "permissions"]
+          }
+        }
+      }
+    },
+    "actions": {"type": "array", "items": {"type": "string"}},
+    "guards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action"],
+        "properties": {
+          "action": {"type": "string"},
+          "paths": {"type": "array", "items": {"type": "string"}},
+          "hosts": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "key": {"type": "string"},
+    "value": {"type": "string"},
+    "relaxes": {"type": "array", "items": {"type": "string"}},
+    "supersedes": {"type": "string", "pattern": "^[a-z0-9]+(\\.[a-z0-9-]+)+@[0-9]+$"}
+  }
+}

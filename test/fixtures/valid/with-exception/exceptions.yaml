@@ -1,0 +1,6 @@
+- id: exc.fixture
+  rule: test.core
+  scope: repo:acme/widget
+  reason: Fixture exception used to prove expiry handling.
+  approver: wyo-security
+  expires: "2999-12-31"

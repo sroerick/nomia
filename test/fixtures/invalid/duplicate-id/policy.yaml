@@ -1,0 +1,10 @@
+schema: nomia/v1
+release: 0.1.0
+compiler: agentctl/1
+description: Test fixture policy.
+maintainers:
+  - name: wyo-engineering
+    role: engineering-owner
+budget:
+  core_max_bytes: 4096
+  max_rules: 8

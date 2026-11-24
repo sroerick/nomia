@@ -1,0 +1,17 @@
+(tests
+ (names test_yaml_lite test_source test_release test_compose test_render
+   test_cli test_enforcement test_render_erde test_render_saguaro test_sync
+   test_mcp)
+ (libraries nomia alcotest unix yojson)
+ (deps
+  (source_tree fixtures)
+  (source_tree golden)
+  (source_tree ../rules)
+  (source_tree ../skills)
+  (source_tree ../roles)
+  (source_tree ../adapters)
+  (source_tree ../fragments)
+  ../policy.yaml
+  ../exceptions.yaml
+  ../../saguaro/harness/persona.tmpl.md
+  ../bin/agentctl.exe))

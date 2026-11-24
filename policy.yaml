@@ -1,0 +1,16 @@
+schema: nomia/v1
+release: 0.1.0
+compiler: agentctl/1
+description: >
+  The reviewed organization baseline for coding and operating agents. The
+  always-loaded core stays short; detailed procedures live in skills.
+maintainers:
+  - name: wyo-engineering
+    role: engineering-owner
+  - name: wyo-security
+    role: security-owner
+  - name: wyo-platform
+    role: policy-owner
+budget:
+  core_max_bytes: 12000
+  max_rules: 16

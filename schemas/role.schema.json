@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "nomia/role.schema.json",
+  "title": "nomia role charter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "description", "charter", "output_contract", "memory_contract", "relaxes", "additions"],
+  "properties": {
+    "name": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+    "description": {"type": "string"},
+    "charter": {"type": "string"},
+    "output_contract": {"type": "string"},
+    "memory_contract": {"const": "shared"},
+    "relaxes": {"type": "array", "items": {"type": "string"}},
+    "additions": {"type": "array", "items": {"type": "string"}}
+  }
+}

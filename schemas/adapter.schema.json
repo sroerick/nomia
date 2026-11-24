@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "nomia/adapter.schema.json",
+  "title": "nomia client adapter capability matrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "description", "instructions", "skills", "roles",
+               "mcp", "hooks", "permissions", "atomic_output", "controls", "unsupported"],
+  "properties": {
+    "id": {"enum": ["generic-agents", "opencode", "erde", "saguaro"]},
+    "version": {"type": "integer", "minimum": 1},
+    "description": {"type": "string"},
+    "instructions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "discovery", "includes"],
+      "properties": {
+        "file": {"type": "string"},
+        "discovery": {"type": "array", "items": {"type": "string"}},
+        "includes": {"type": "boolean"}
+      }
+    },
+    "skills": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dir", "auto_discovery", "explicit_reference"],
+      "properties": {
+        "dir": {"type": "string"},
+        "auto_discovery": {"type": "boolean"},
+        "explicit_reference": {"type": "boolean"}
+      }
+    },
+    "roles": {"type": "boolean"},
+    "mcp": {"type": "boolean"},
+    "hooks": {"type": "boolean"},
+    "permissions": {"type": "boolean"},
+    "atomic_output": {"type": "boolean"},
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advisory", "gate", "consent", "prohibition"],
+      "properties": {
+        "advisory": {"type": "array", "items": {"type": "string"}},
+        "gate": {"type": "array", "items": {"type": "string"}},
+        "consent": {"type": "array", "items": {"type": "string"}},
+        "prohibition": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "unsupported": {"type": "array", "items": {"type": "string"}}
+  }
+}

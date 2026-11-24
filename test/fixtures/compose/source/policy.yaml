@@ -1,0 +1,12 @@
+schema: nomia/v1
+release: 0.1.0
+compiler: agentctl/1
+description: Composition fixture policy.
+maintainers:
+  - name: wyo-engineering
+    role: engineering-owner
+  - name: wyo-security
+    role: security-owner
+budget:
+  core_max_bytes: 8192
+  max_rules: 12

@@ -1,0 +1,32 @@
+id: erde
+version: 1
+description: >
+  Erde's stable framework segment: organization core, shared harness and
+  memory lifecycle contract, selected role charter, then approved additions.
+instructions:
+  file: framework.md
+  discovery:
+    - ERDE_POLICY_FRAMEWORK
+  includes: false
+skills:
+  dir: skills
+  auto_discovery: false
+  explicit_reference: true
+roles: true
+mcp: false
+hooks: false
+permissions: true
+atomic_output: true
+controls:
+  advisory:
+    - instruction
+    - skill
+  gate:
+    - ci-verification
+    - evidence-verifier
+  consent: []
+  prohibition:
+    - permissions
+unsupported:
+  - native skill auto-discovery
+  - MCP resources

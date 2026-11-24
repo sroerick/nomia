@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "nomia/release.schema.json",
+  "title": "nomia immutable release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "compiler", "release", "client", "role",
+               "fragment_digest", "source_files", "rules", "skills", "roles",
+               "adapters", "exceptions", "artifacts", "digest"],
+  "properties": {
+    "schema": {"const": "nomia-release/v1"},
+    "compiler": {"type": "string"},
+    "release": {"type": "string"},
+    "client": {"type": ["string", "null"]},
+    "role": {"type": ["string", "null"]},
+    "fragment_digest": {"type": ["string", "null"]},
+    "source_files": {"type": "array", "items": {"$ref": "#/definitions/hash"}},
+    "rules": {"type": "array", "items": {"type": "object"}},
+    "skills": {"type": "array", "items": {"type": "object"}},
+    "roles": {"type": "array", "items": {"type": "object"}},
+    "adapters": {"type": "array", "items": {"type": "object"}},
+    "exceptions": {"type": "array", "items": {"type": "string"}},
+    "artifacts": {"type": "array", "items": {"$ref": "#/definitions/hash"}},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  },
+  "definitions": {
+    "hash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+- id: exc.fixture
+  rule: test.core
+  scope: repo:acme/widget
+  reason: Fixture exception that has already expired.
+  approver: wyo-security
+  expires: "2020-01-01"

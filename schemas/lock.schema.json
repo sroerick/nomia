@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "nomia/lock.schema.json",
+  "title": "nomia repository pin",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "release", "source_digest", "adapter_schema", "compiler"],
+  "properties": {
+    "schema": {"const": "nomia-lock/v2"},
+    "release": {"type": "string"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "source_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "adapter_schema": {"type": "integer", "minimum": 1},
+    "compiler": {"type": "string"},
+    "role": {"type": "string"},
+    "client": {"type": "string"},
+    "fragment": {"type": "string"}
+  }
+}

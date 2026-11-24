@@ -1,0 +1,18 @@
+- id: exc.repo-open
+  rule: org.open
+  scope: repo:widget
+  reason: Fixture exception scoped to the widget repository.
+  approver: wyo-security
+  expires: "2999-12-31"
+- id: exc.path-gate
+  rule: org.gate
+  scope: repo:widget
+  reason: Fixture path exception active in a repository context.
+  approver: wyo-engineering
+  expires: "2999-12-31"
+- id: exc.task-review
+  rule: org.review
+  scope: task:release
+  reason: Fixture task exception that render never activates.
+  approver: wyo-engineering
+  expires: "2999-12-31"

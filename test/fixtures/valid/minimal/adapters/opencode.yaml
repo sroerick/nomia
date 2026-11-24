@@ -1,0 +1,29 @@
+id: opencode
+version: 1
+description: Fixture adapter capability matrix.
+instructions:
+  file: AGENTS.md
+  discovery:
+    - AGENTS.md
+  includes: true
+skills:
+  dir: .opencode/skills
+  auto_discovery: true
+  explicit_reference: true
+roles: false
+mcp: true
+hooks: false
+permissions: true
+atomic_output: true
+controls:
+  advisory:
+    - instruction
+    - skill
+  gate:
+    - ci-verification
+    - evidence-verifier
+  consent: []
+  prohibition:
+    - permissions
+unsupported:
+  - pre-tool consent hook

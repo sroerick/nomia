@@ -1,0 +1,29 @@
+id: generic-agents
+version: 1
+description: Composition fixture generic adapter.
+instructions:
+  file: AGENTS.md
+  discovery:
+    - AGENTS.md
+  includes: false
+skills:
+  dir: .agents/skills
+  auto_discovery: true
+  explicit_reference: true
+roles: false
+mcp: false
+hooks: false
+permissions: false
+atomic_output: true
+controls:
+  advisory:
+    - instruction
+    - skill
+  gate:
+    - ci-verification
+    - evidence-verifier
+  consent: []
+  prohibition: []
+unsupported:
+  - native host hooks
+  - native permission prompts

@@ -1,0 +1,36 @@
+id: opencode
+version: 1
+description: >
+  OpenCode v2 native instructions, skills, and conservative permissions.
+  Authored against the OpenCode v2 documentation (2.3.x); the capability
+  matrix names what remains advisory, and no live fixture-HOME run is claimed.
+instructions:
+  file: AGENTS.md
+  discovery:
+    - AGENTS.md
+    - .opencode/AGENTS.md
+  includes: true
+skills:
+  dir: .opencode/skills
+  auto_discovery: true
+  explicit_reference: true
+roles: false
+mcp: true
+hooks: false
+permissions: true
+atomic_output: true
+controls:
+  advisory:
+    - instruction
+    - skill
+  gate:
+    - ci-verification
+    - evidence-verifier
+  consent:
+    - permissions
+  prohibition:
+    - permissions
+unsupported:
+  - pre-tool consent hook
+  - network sandbox
+  - sandboxed tool execution

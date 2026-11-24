@@ -1,0 +1,9 @@
+name: implementer
+description: Fixture role for source validation.
+charter: |
+  Do the fixture work inside its declared scope.
+output_contract: |
+  Report the fixture work with evidence.
+memory_contract: shared
+relaxes: []
+additions: [test.core]

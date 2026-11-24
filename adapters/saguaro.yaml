@@ -1,0 +1,32 @@
+id: saguaro
+version: 1
+description: >
+  Saguaro persona generation. The organization core is composed with the
+  existing owner/agent/host template only after explicit managed-mode opt-in;
+  an unmanaged persona is never overwritten.
+instructions:
+  file: persona.md
+  discovery:
+    - AGENTS.md
+  includes: false
+skills:
+  dir: skills
+  auto_discovery: false
+  explicit_reference: true
+roles: false
+mcp: false
+hooks: false
+permissions: false
+atomic_output: true
+controls:
+  advisory:
+    - instruction
+    - skill
+  gate:
+    - ci-verification
+  consent: []
+  prohibition: []
+unsupported:
+  - pre-tool consent hook
+  - native permissions
+  - MCP resources

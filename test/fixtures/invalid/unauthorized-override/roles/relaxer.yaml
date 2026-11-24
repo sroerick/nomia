@@ -1,0 +1,9 @@
+name: relaxer
+description: Role that tries to relax a final rule.
+charter: |
+  Attempt an unauthorized override.
+output_contract: |
+  Report the override.
+memory_contract: shared
+relaxes: [test.core]
+additions: []

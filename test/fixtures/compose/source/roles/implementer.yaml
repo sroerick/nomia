@@ -1,0 +1,9 @@
+name: implementer
+description: Composition fixture implementer.
+charter: |
+  Implement the fixture card and report evidence.
+output_contract: |
+  Report commands and their exits.
+memory_contract: shared
+relaxes: []
+additions: [org.open]

@@ -1,0 +1,3 @@
+# Reviewed exceptions. Each entry needs a rule, narrow scope, reason,
+# approver, and future expiry. An empty list is the normal state.
+[]
