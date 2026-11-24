@@ -26,7 +26,7 @@ let rule_block (rule : Model.rule) =
 let section heading parts =
   String.concat "\n\n" (heading :: parts)
 
-let agents_md (policy_set : Compose.t) =
+let full_agents_md (policy_set : Compose.t) =
   let release = policy_set.Compose.source.Model.policy.release in
   let header =
     Printf.sprintf
@@ -89,3 +89,57 @@ let agents_md (policy_set : Compose.t) =
     add (section "# Skills" [ String.concat "\n" pointers ])
   end;
   String.concat "\n\n" (List.rev !blocks) ^ "\n"
+
+let project_overlay_md (policy_set : Compose.t) =
+  let release = policy_set.Compose.source.Model.policy.release in
+  let header =
+    Printf.sprintf
+      "<!-- nomia:generated release=%s digest=%s inherit-root=true -->\n\
+       <!-- Edit the reviewed nomia project source, not this generated file. -->"
+      release policy_set.Compose.digest
+  in
+  let blocks = ref [ header ] in
+  let add block = blocks := block :: !blocks in
+  List.iter
+    (fun (fragment : Compose.fragment) ->
+      if fragment.scope = Compose.Project then
+        let parts =
+          (if String.trim fragment.prose = "" then []
+           else [ String.trim fragment.prose ])
+          @ List.filter_map
+              (fun (resolved : Compose.resolved_rule) ->
+                if
+                  resolved.Compose.origin = Compose.Repository
+                  && resolved.Compose.rule.Model.source = fragment.path
+                then Some (rule_block resolved.rule)
+                else None)
+              policy_set.Compose.rules
+        in
+        if parts <> [] then
+          add
+            (section
+               (Printf.sprintf "# Project instructions (%s)" fragment.path)
+               parts))
+    policy_set.Compose.fragments;
+  (match policy_set.Compose.role with
+  | None -> ()
+  | Some role ->
+      let parts =
+        [
+          String.trim role.Model.charter;
+          "## Output contract";
+          String.trim role.output_contract;
+        ]
+        @ List.filter_map
+            (fun (resolved : Compose.resolved_rule) ->
+              if resolved.Compose.origin = Compose.Role then
+                Some (rule_block resolved.rule)
+              else None)
+            policy_set.Compose.rules
+      in
+      add (section (Printf.sprintf "# Role: %s" role.name) parts));
+  String.concat "\n\n" (List.rev !blocks) ^ "\n"
+
+let agents_md policy_set =
+  if policy_set.Compose.inherit_root then project_overlay_md policy_set
+  else full_agents_md policy_set

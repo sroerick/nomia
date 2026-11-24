@@ -32,6 +32,10 @@ type t = {
   adapter : Model.adapter;
   role : Model.role option;
   project : string option;
+  inherit_root : bool;
+      (** Project target renders only its project delta because the managed
+          repository root supplies the organization core, root fragment, and
+          skills. *)
   fragments : fragment list;  (** Root fragment, then project fragment. *)
   lock : Lock.t option;
   rules : resolved_rule list;
@@ -391,13 +395,15 @@ let support_of ~adapter ~warn (rule : rule) =
 (* Resolution                                                          *)
 (* ------------------------------------------------------------------ *)
 
-let resolve ?repo ?role ?client ?project ?ignore_lock ?today source =
+let resolve ?repo ?role ?client ?project ?inherit_root ?ignore_lock ?today
+    source =
   let today = today_value ?today () in
   let diagnostics = ref [] in
   let warnings = ref [] in
   let add diagnostic = diagnostics := diagnostic :: !diagnostics in
   let warn message = warnings := message :: !warnings in
   let ignore_lock = Option.value ignore_lock ~default:false in
+  let inherit_root = Option.value inherit_root ~default:false in
 
   match normalize_project (Option.value project ~default:"") with
   | Error diagnostic -> Error [ diagnostic ]
@@ -407,6 +413,13 @@ let resolve ?repo ?role ?client ?project ?ignore_lock ?today source =
           diag "compose.project.repo" (Option.get project) None
             "--project requires --repo so the project can be resolved inside \
              a repository context";
+        ]
+  | Ok project when inherit_root && project = None ->
+      Error
+        [
+          diag "compose.inherit-root.project" "." None
+            "--inherit-root requires --project; the managed repository root \
+             supplies the shared policy";
         ]
   | Ok project -> (
   match
@@ -480,6 +493,19 @@ let resolve ?repo ?role ?client ?project ?ignore_lock ?today source =
           let fragments =
             select_fragments ~repo ~project ~lock ~add ~warn
           in
+          if
+            inherit_root
+            && not
+                 (List.exists
+                    (fun (fragment : fragment) ->
+                      fragment.scope = Project)
+                    fragments)
+          then
+            add
+              (diag "compose.inherit-root.fragment" (Option.get project) None
+                 "--inherit-root needs a selected project fragment; create \
+                  AGENTS.fragment.md for the project before installing its \
+                  overlay");
           let org_rules =
             source.rules
             |> List.filter (fun (rule : rule) -> rule.layer = Organization)
@@ -813,8 +839,8 @@ let resolve ?repo ?role ?client ?project ?ignore_lock ?today source =
           in
           let release =
             Release.build ~client:adapter.id ?role:role_name ?project
-              ~fragments:release_fragments ~exceptions:active_exception_ids
-              source
+              ~inherit_root ~fragments:release_fragments
+              ~exceptions:active_exception_ids source
           in
           (match lock with
           | None -> ()
@@ -904,6 +930,7 @@ let resolve ?repo ?role ?client ?project ?ignore_lock ?today source =
                 adapter;
                 role = selected_role;
                 project;
+                inherit_root;
                 fragments;
                 lock;
                 rules = resolved;
@@ -913,14 +940,15 @@ let resolve ?repo ?role ?client ?project ?ignore_lock ?today source =
                 today;
               }))
 
-let resolve_root ?repo ?role ?client ?project ?today ~root () =
+let resolve_root ?repo ?role ?client ?project ?inherit_root ?today ~root () =
   let today = today_value ?today () in
   match Source.load ~root with
   | Error diagnostics -> Error diagnostics
   | Ok source -> (
       match Source.validate ~today source with
       | Error diagnostics -> Error diagnostics
-      | Ok () -> resolve ?repo ?role ?client ?project ~today source)
+      | Ok () ->
+          resolve ?repo ?role ?client ?project ?inherit_root ~today source)
 
 (* ------------------------------------------------------------------ *)
 (* Explain                                                             *)
@@ -1133,6 +1161,7 @@ let explain_json (policy_set : t) =
           ] );
       ("source_digest", `String policy_set.source_digest);
       ("project", option_string policy_set.project);
+      ("inherit_root", `Bool policy_set.inherit_root);
       ( "fragments",
         `List
           (List.map
@@ -1193,6 +1222,7 @@ let explain_text (policy_set : t) =
   line "adapter: %s@%d" policy_set.adapter.id policy_set.adapter.version;
   line "project: %s"
     (Option.value policy_set.project ~default:"none");
+  line "inherit_root: %b" policy_set.inherit_root;
   line "role: %s"
     (match policy_set.role with None -> "none" | Some role -> role.name);
   line "role_additions: %s"

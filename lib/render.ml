@@ -129,11 +129,25 @@ let render (policy_set : Compose.t) ~client =
           "the Saguaro persona renderer does not carry a role charter; render \
            without --role and keep role behavior in the Saguaro configuration";
       ]
+  else if
+    policy_set.Compose.inherit_root
+    && client <> "generic-agents" && client <> "opencode"
+  then
+    Error
+      [
+        diagnostic "render.inherit-root.unsupported" "adapters"
+          "a project overlay is supported only for generic AGENTS.md and \
+           OpenCode targets; the managed repository root supplies shared \
+           skills and configuration";
+      ]
   else
     let explain =
       Canonical.to_string (Compose.explain_json policy_set) ^ "\n"
     in
-    let skills, skill_diagnostics = skill_artifacts policy_set in
+    let skills, skill_diagnostics =
+      if policy_set.Compose.inherit_root then ([], [])
+      else skill_artifacts policy_set
+    in
     let client_result =
       match client with
       | "generic-agents" ->
@@ -146,19 +160,24 @@ let render (policy_set : Compose.t) ~client =
               };
             ]
       | "opencode" ->
-          Ok
-            [
-              {
-                path = "AGENTS.md";
-                contents = Render_generic.agents_md policy_set;
-                mode = file_mode;
-              };
-              {
-                path = "opencode.json";
-                contents = Render_opencode.config policy_set;
-                mode = file_mode;
-              };
-            ]
+          let agents =
+            {
+              path = "AGENTS.md";
+              contents = Render_generic.agents_md policy_set;
+              mode = file_mode;
+            }
+          in
+          if policy_set.Compose.inherit_root then Ok [ agents ]
+          else
+            Ok
+              [
+                agents;
+                {
+                  path = "opencode.json";
+                  contents = Render_opencode.config policy_set;
+                  mode = file_mode;
+                };
+              ]
       | "erde" -> (
           match Render_erde.memory_contract policy_set with
           | Error diagnostics -> Error diagnostics

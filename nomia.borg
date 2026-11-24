@@ -177,6 +177,8 @@
     "missing, escaping, and repository-less project selections fail before rendering or provider work")
    (smoke
     "one root pin serves a project-scoped install under the project directory while the root target remains untouched")
+   (smoke
+    "a project overlay inherits the managed root, renders only project instructions, and duplicates neither the organization core nor skills")
   )
   (details
    (doc (|
@@ -198,6 +200,15 @@
         pin; project-local lock files are not created. Project exceptions use
         project:PATH scopes. Enforcement requests may carry a project, which
         must equal the composed project.
+
+        Native clients that load ancestor AGENTS.md files would otherwise see
+        the organization core twice. [--inherit-root] makes a project target a
+        project-only overlay: the managed repository root supplies the
+        organization core, root fragment, skills, and client configuration,
+        while the project artifact carries only its reviewed project delta.
+        The overlay is an explicit resolved input in the release digest and
+        explain output, and sync refuses it unless the same client has an
+        installed, intact root target.
 
         This is a monorepo composition rule, not a second release stream:
         every project uses the same immutable organization source and the same
@@ -226,12 +237,12 @@
             test suite, a compliance monitor, or a tool agents need to call.
 
           agentctl render --client CLIENT [--repo DIR] [--project PATH]
-                          [--role ROLE] --out DIR
+                          [--inherit-root] [--role ROLE] --out DIR
             Compile the pinned bundle into a selected empty output directory.
             Render never edits native configuration or runs an agent.
 
-          agentctl explain [--repo DIR] [--project PATH] [--role ROLE]
-                           [--client CLIENT] [--json]
+          agentctl explain [--repo DIR] [--project PATH] [--inherit-root]
+                           [--role ROLE] [--client CLIENT] [--json]
             Print selected release, inputs, active rules/skills/exceptions,
             capabilities, output artifacts, and provenance. Explain performs
             the same resolution as render; no alternate merge logic.
@@ -266,8 +277,9 @@
 
           agentctl sync --client CLIENT          user-level managed installation
           agentctl sync --repo DIR               repository-selected installation
-          agentctl sync --repo DIR --project PATH project-scoped installation
-          agentctl doctor [--repo DIR] [--project PATH]
+          agentctl sync --repo DIR --project PATH [--inherit-root]
+                                                  project-scoped installation
+          agentctl doctor [--repo DIR] [--project PATH] [--inherit-root]
                                                   drift and capability report
 
         Rendering and installation are separate phases. Sync validates a
@@ -452,7 +464,7 @@
   (implements "scripts/verify_nomia.sh" "../scripts/monorepo-deploy.yml")
   (verify
    (smoke
-    "scripts/verify_nomia.sh runs unit, golden, conflict, digest stability, monorepo project composition, adapter, offline, and fake-host suites without credentials")
+    "scripts/verify_nomia.sh runs unit, golden, conflict, digest stability, monorepo project composition and overlay inheritance, adapter, offline, and fake-host suites without credentials")
    (smoke
     "a clean temporary HOME twice produces identical artifacts and explanation JSON")
    (smoke

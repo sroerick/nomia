@@ -195,30 +195,37 @@ let workspace_env workspace ?(extra = []) () =
 let run workspace ?(extra = []) args =
   spawn ~env:(workspace_env workspace ~extra ()) args
 
-let sync_args workspace ?repo ?project ?client ?(update_pin = false) ~source () =
+let sync_args workspace ?repo ?project ?(inherit_root = false) ?client
+    ?(update_pin = false) ~source () =
   [ "sync" ]
   @ (match repo with Some repo -> [ "--repo"; repo ] | None -> [])
   @ (match project with Some project -> [ "--project"; project ] | None -> [])
+  @ (if inherit_root then [ "--inherit-root" ] else [])
   @ (match client with Some client -> [ "--client"; client ] | None -> [])
   @ [ "--source"; source ]
-  @ if update_pin then [ "--update-pin" ] else []
+  @ (if update_pin then [ "--update-pin" ] else [])
 
-let doctor_args workspace ?repo ?project ?client ?source () =
+let doctor_args workspace ?repo ?project ?(inherit_root = false) ?client ?source
+    () =
   [ "doctor" ]
   @ (match repo with Some repo -> [ "--repo"; repo ] | None -> [])
   @ (match project with Some project -> [ "--project"; project ] | None -> [])
+  @ (if inherit_root then [ "--inherit-root" ] else [])
   @ (match client with Some client -> [ "--client"; client ] | None -> [])
   @ (match source with Some source -> [ "--source"; source ] | None -> [])
   @ [ "--json" ]
 
-let run_sync workspace ?repo ?project ?client ?(update_pin = false)
-    ?(source = workspace.src) ?(extra = []) () =
+let run_sync workspace ?repo ?project ?(inherit_root = false) ?client
+    ?(update_pin = false) ?(source = workspace.src) ?(extra = []) () =
   run workspace ~extra
-    (sync_args workspace ?repo ?project ?client ~update_pin ~source ())
+    (sync_args workspace ?repo ?project ~inherit_root ?client ~update_pin
+       ~source ())
 
-let run_doctor workspace ?repo ?project ?client ?source ?(extra = []) () =
+let run_doctor workspace ?repo ?project ?(inherit_root = false) ?client ?source
+    ?(extra = []) () =
   let source = match source with Some source -> Some source | None -> Some workspace.src in
-  run workspace ~extra (doctor_args workspace ?repo ?project ?client ?source ())
+  run workspace ~extra
+    (doctor_args workspace ?repo ?project ~inherit_root ?client ?source ())
 
 (* ------------------------------------------------------------------ *)
 (* JSON and snapshot helpers                                           *)
@@ -1032,6 +1039,64 @@ let test_project_sync_uses_root_pin () =
            (read_file (Filename.concat sibling_root "AGENTS.md"))
            "Tuna-specific instructions only."))
 
+let test_project_overlay_sync () =
+  with_workspace (fun workspace ->
+      write_full_coverage workspace;
+      write_file (Filename.concat workspace.repo "AGENTS.fragment.md")
+        "Repository-wide instructions for every project.\n";
+      let project_root = Filename.concat workspace.repo "tuna" in
+      mkdir_p project_root;
+      write_file (Filename.concat project_root "AGENTS.fragment.md")
+        "Tuna-specific instructions only.\n";
+      let root =
+        run_sync workspace ~repo:workspace.repo ~client:"opencode"
+          ~update_pin:true ()
+      in
+      Alcotest.(check int) "root sync exits 0" 0 root.code;
+      let overlay =
+        run_sync workspace ~repo:workspace.repo ~project:"tuna"
+          ~inherit_root:true ~client:"opencode" ()
+      in
+      Alcotest.(check int) "overlay project sync exits 0" 0 overlay.code;
+      Alcotest.(check bool) "root target remains installed" true
+        (Sys.file_exists (state_path workspace.repo));
+      Alcotest.(check bool) "project overlay target is installed" true
+        (Sys.file_exists (state_path project_root));
+      Alcotest.(check bool) "overlay has no project-local lock" false
+        (Sys.file_exists (lock_path project_root));
+      Alcotest.(check bool) "overlay has no duplicate skills" false
+        (Sys.file_exists (Filename.concat project_root ".opencode"));
+      let agents = read_file (Filename.concat project_root "AGENTS.md") in
+      Alcotest.(check bool) "overlay excludes organization core" false
+        (contains_sub agents "# Organization agent policy");
+      Alcotest.(check bool) "overlay excludes root instructions" false
+        (contains_sub agents "Repository-wide instructions for every project.");
+      Alcotest.(check bool) "overlay includes project instructions" true
+        (contains_sub agents "Tuna-specific instructions only.");
+      let doctor =
+        run_doctor workspace ~repo:workspace.repo ~project:"tuna"
+          ~inherit_root:true ()
+      in
+      Alcotest.(check int) "overlay doctor exits 0" 0 doctor.code;
+      let report = parse_json doctor.stdout in
+      Alcotest.(check string) "overlay doctor is current" "current"
+        (json_string "state" report);
+      Alcotest.(check bool) "overlay doctor records inheritance" true
+        (match member "inherit_root" report with
+        | Some (`Bool true) -> true
+        | _ -> false);
+      let missing_root =
+        let other = workspace.repo ^ "-no-root" in
+        mkdir_p (Filename.concat other "tuna");
+        write_file
+          (Filename.concat (Filename.concat other "tuna") "AGENTS.fragment.md")
+          "Project without a managed root.\n";
+        run_sync workspace ~repo:other ~project:"tuna" ~inherit_root:true
+          ~update_pin:true ()
+      in
+      Alcotest.(check bool) "overlay refuses without a managed root" true
+        (missing_root.code <> 0))
+
 (* ------------------------------------------------------------------ *)
 (* Suite                                                              *)
 (* ------------------------------------------------------------------ *)
@@ -1056,6 +1121,8 @@ let () =
             test_lock_mismatch_and_repin;
           Alcotest.test_case "project sync uses the root pin" `Quick
             test_project_sync_uses_root_pin;
+          Alcotest.test_case "project overlay inherits the root" `Quick
+            test_project_overlay_sync;
         ] );
       ( "distribution",
         [

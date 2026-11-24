@@ -72,15 +72,19 @@ let load_source root =
       Alcotest.failf "load %s: %s" root
         (String.concat ", " (List.map (fun (d : M.diagnostic) -> d.code) diagnostics))
 
-let resolve_ok ?repo ?project ?role ?client source =
-  match Co.resolve ?repo ?project ?role ?client ~today source with
+let resolve_ok ?repo ?project ?inherit_root ?role ?client source =
+  match
+    Co.resolve ?repo ?project ?inherit_root ?role ?client ~today source
+  with
   | Ok policy_set -> policy_set
   | Error diagnostics ->
       Alcotest.failf "resolve: %s"
         (String.concat ", " (List.map (fun (d : M.diagnostic) -> d.code) diagnostics))
 
-let resolve_error ?repo ?project ?role ?client source =
-  match Co.resolve ?repo ?project ?role ?client ~today source with
+let resolve_error ?repo ?project ?inherit_root ?role ?client source =
+  match
+    Co.resolve ?repo ?project ?inherit_root ?role ?client ~today source
+  with
   | Ok _ -> Alcotest.fail "resolve unexpectedly succeeded"
   | Error diagnostics -> diagnostics
 
@@ -501,7 +505,17 @@ let test_project_composition () =
       Alcotest.(check string) "explain records the project" "tuna"
         (member_string "project" explain);
       Alcotest.(check int) "explain records the fragment chain" 2
-        (List.length (member_list "fragments" explain)))
+        (List.length (member_list "fragments" explain));
+      let overlay = resolve_ok ~repo ~project:"tuna" ~inherit_root:true source in
+      Alcotest.(check bool) "overlay mode is recorded" true overlay.inherit_root;
+      Alcotest.(check bool) "overlay changes the release digest" true
+        (overlay.digest <> tuna.digest);
+      Alcotest.(check bool) "overlay still composes the full policy" true
+        (List.length overlay.rules = List.length tuna.rules);
+      Alcotest.(check bool) "explain records overlay mode" true
+        (match member "inherit_root" (Co.explain_json overlay) with
+        | Some (`Bool true) -> true
+        | _ -> false))
 
 let test_project_exception_scope () =
   let source = load_source compose_source in
@@ -547,7 +561,19 @@ let test_project_validation () =
         (has_code "compose.project.path" unsafe);
       let no_repo = resolve_error ~project:"tuna" source in
       Alcotest.(check bool) "project requires a repository" true
-        (has_code "compose.project.repo" no_repo))
+        (has_code "compose.project.repo" no_repo);
+      let no_project =
+        resolve_error ~repo ~inherit_root:true source
+      in
+      Alcotest.(check bool) "overlay requires a project" true
+        (has_code "compose.inherit-root.project" no_project);
+      let empty = Filename.concat repo "empty" in
+      Unix.mkdir empty 0o755;
+      let no_fragment =
+        resolve_error ~repo ~project:"empty" ~inherit_root:true source
+      in
+      Alcotest.(check bool) "overlay requires a project fragment" true
+        (has_code "compose.inherit-root.fragment" no_fragment))
 
 (* ------------------------------------------------------------------ *)
 (* Unknown selections                                                 *)

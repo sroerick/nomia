@@ -13,6 +13,7 @@ val build :
   ?client:string ->
   ?role:string ->
   ?project:string ->
+  ?inherit_root:bool ->
   ?fragments:(string * string) list ->
   ?exceptions:string list ->
   ?artifacts:(string * string) list ->
@@ -23,7 +24,8 @@ val build :
 
     [client] is the selected adapter id (different adapters are different
     releases), [role] is the selected role name (if any), [project] is the
-    selected monorepo project, [fragments] is the ordered
+    selected monorepo project, [inherit_root] marks a project-only overlay,
+    [fragments] is the ordered
     [(repository-relative path, digest)] fragment chain, [exceptions] defaults
     to the loaded source's exception ids, and [artifacts] are
     [(relative path, content)] pairs that are hashed but do not affect the

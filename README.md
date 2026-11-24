@@ -85,11 +85,15 @@ _build/default/nomia/bin/agentctl.exe explain \
 _build/default/nomia/bin/agentctl.exe explain \
   --source nomia --repo . --project tuna --client opencode --json
 
-# Pin the monorepo root and install one project-scoped target.
+# Pin and install the monorepo root once.
 _build/default/nomia/bin/agentctl.exe sync \
-  --repo . --project tuna --client opencode --source nomia --update-pin
+  --repo . --client opencode --source nomia --update-pin
+
+# Install an explicit project-only overlay that inherits the root.
+_build/default/nomia/bin/agentctl.exe sync \
+  --repo . --project tuna --inherit-root --client opencode --source nomia
 _build/default/nomia/bin/agentctl.exe doctor \
-  --repo . --project tuna --source nomia
+  --repo . --project tuna --inherit-root --source nomia
 
 # User-level managed install (under ~/.config/nomia/clients/<client>).
 _build/default/nomia/bin/agentctl.exe sync --client opencode --source nomia
@@ -131,6 +135,11 @@ agentctl mcp --source nomia --client opencode
   fragment. The compiler never infers a project from changed files or the
   current directory. `project:` exception scopes and request-project metadata
   use the same identity.
+- **Nested native clients use `--inherit-root`.** OpenCode and similar clients
+  load AGENTS.md from every ancestor. A project overlay therefore carries only
+  its own reviewed fragment; the managed root supplies the organization core,
+  root fragment, skills, and client config. Sync refuses overlays without an
+  intact root target for the same client.
 - **Path-only exceptions are rejected.** Render has no changed-file context,
   so it cannot honestly prove a `path:` scope. Use a repository or project
   scope, which may still carry a path qualifier.

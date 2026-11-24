@@ -165,10 +165,11 @@ let release_for_render (policy_set : Compose.t) artifacts =
       policy_set.Compose.exceptions
   in
   Release.build ~client:policy_set.Compose.adapter.Model.id ?role
-    ?project:policy_set.Compose.project ~fragments ~exceptions ~artifacts
-    policy_set.Compose.source
+    ?project:policy_set.Compose.project
+    ~inherit_root:policy_set.Compose.inherit_root ~fragments ~exceptions
+    ~artifacts policy_set.Compose.source
 
-let render_run client repo project role source out =
+let render_run client repo project inherit_root role source out =
   guard (fun () ->
       match discover_source ?source () with
       | Error message ->
@@ -176,8 +177,8 @@ let render_run client repo project role source out =
           1
       | Ok root -> (
           match
-            Compose.resolve_root ?repo ?project ?role ~client ?today:None ~root
-              ()
+            Compose.resolve_root ?repo ?project ~inherit_root ?role ~client
+              ?today:None ~root ()
           with
           | Error diagnostics ->
               print_diagnostics stderr diagnostics;
@@ -222,7 +223,7 @@ let render_run client repo project role source out =
 (* explain                                                             *)
 (* ------------------------------------------------------------------ *)
 
-let explain_run repo project role client source json =
+let explain_run repo project inherit_root role client source json =
   guard (fun () ->
       match discover_source ?source () with
       | Error message ->
@@ -230,8 +231,8 @@ let explain_run repo project role client source json =
           1
       | Ok root -> (
           match
-            Compose.resolve_root ?repo ?project ?role ?client ?today:None ~root
-              ()
+            Compose.resolve_root ?repo ?project ~inherit_root ?role ?client
+              ?today:None ~root ()
           with
           | Error diagnostics ->
               print_diagnostics stderr diagnostics;
@@ -258,7 +259,7 @@ let print_sync_error = function
       print_diagnostics stderr diagnostics;
       1
 
-let sync_run repo project client role source update_pin =
+let sync_run repo project inherit_root client role source update_pin =
   guard (fun () ->
       match discover_source ?source () with
       | Error message ->
@@ -271,7 +272,8 @@ let sync_run repo project client role source update_pin =
           1
       | Ok root -> (
           match
-            Sync.sync ~repo ~project ~client ~role ~source_root:root ~update_pin
+            Sync.sync ~repo ~project ~inherit_root ~client ~role
+              ~source_root:root ~update_pin
           with
           | Error error -> print_sync_error error
           | Ok result ->
@@ -297,14 +299,16 @@ let sync_run repo project client role source update_pin =
 (* doctor                                                              *)
 (* ------------------------------------------------------------------ *)
 
-let doctor_run repo project role client source json =
+let doctor_run repo project inherit_root role client source json =
   guard (fun () ->
       let source_root =
         match discover_source ?source () with
         | Ok root when source_available root -> Some root
         | _ -> None
       in
-      match Sync.doctor ~repo ~project ~role ~client ~source_root with
+      match
+        Sync.doctor ~repo ~project ~inherit_root ~role ~client ~source_root
+      with
       | Error (Sync.Message message) ->
           report_error message;
           1
@@ -427,6 +431,15 @@ let repo_option =
     & info [ "repo" ] ~docv:"DIR"
         ~doc:"Repository context for its lock and trusted fragment.")
 
+let inherit_root_flag =
+  Arg.(
+    value & flag
+    & info [ "inherit-root" ]
+        ~doc:
+          "For --project targets inside an already-managed repository: render \
+           only the project delta because the root supplies the organization \
+           core, root fragment, skills, and client configuration.")
+
 let project_option =
   Arg.(
     value
@@ -513,14 +526,14 @@ let render_command =
   Cmd.v (Cmd.info "render" ~doc)
     Term.(
       const render_run $ required_client $ repo_option $ project_option
-      $ role_option $ source_option $ required_out)
+      $ inherit_root_flag $ role_option $ source_option $ required_out)
 
 let explain_command =
   let doc = "Explain the exact PolicySet that render would use." in
   Cmd.v (Cmd.info "explain" ~doc)
     Term.(
-      const explain_run $ repo_option $ project_option $ role_option
-      $ client_option $ source_option $ json_flag)
+      const explain_run $ repo_option $ project_option $ inherit_root_flag
+      $ role_option $ client_option $ source_option $ json_flag)
 
 let decide_command =
   let doc =
@@ -539,8 +552,8 @@ let sync_command =
   in
   Cmd.v (Cmd.info "sync" ~doc)
     Term.(
-      const sync_run $ repo_option $ project_option $ client_option
-      $ role_option $ source_option $ update_pin_flag)
+      const sync_run $ repo_option $ project_option $ inherit_root_flag
+      $ client_option $ role_option $ source_option $ update_pin_flag)
 
 let doctor_command =
   let doc =
@@ -549,8 +562,8 @@ let doctor_command =
   in
   Cmd.v (Cmd.info "doctor" ~doc)
     Term.(
-      const doctor_run $ repo_option $ project_option $ role_option
-      $ client_option $ source_option $ json_flag)
+      const doctor_run $ repo_option $ project_option $ inherit_root_flag
+      $ role_option $ client_option $ source_option $ json_flag)
 
 let mcp_command =
   let doc =

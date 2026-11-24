@@ -41,6 +41,9 @@ type t = {
   adapter : Model.adapter;
   role : Model.role option;
   project : string option;  (** Repository-relative selected project, if any. *)
+  inherit_root : bool;
+      (** The rendered target is a project overlay: the managed repository
+          root supplies the organization core, root fragment, and skills. *)
   fragments : fragment list;
       (** Ordered root fragment, then selected project fragment. *)
   lock : Lock.t option;
@@ -58,6 +61,7 @@ val resolve :
   ?role:string ->
   ?client:string ->
   ?project:string ->
+  ?inherit_root:bool ->
   ?ignore_lock:bool ->
   ?today:string ->
   Model.source ->
@@ -67,15 +71,18 @@ val resolve :
     repository-relative project and adds that project's fragment after the
     root fragment; [role] and [client] override lock values. An unknown client,
     role, or project is a diagnostic. A lock whose release, compiler, or
-    source digest does not match is a re-pin diagnostic. [ignore_lock] is for
-    the explicit sync re-pin path, which must resolve the candidate without
-    letting the old lock veto it. *)
+    source digest does not match is a re-pin diagnostic. [inherit_root] marks a
+    project-only overlay for a target whose managed repository root already
+    supplies the organization core and skills. [ignore_lock] is for the
+    explicit sync re-pin path, which must resolve the candidate without letting
+    the old lock veto it. *)
 
 val resolve_root :
   ?repo:string ->
   ?role:string ->
   ?client:string ->
   ?project:string ->
+  ?inherit_root:bool ->
   ?today:string ->
   root:string ->
   unit ->

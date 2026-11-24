@@ -84,8 +84,9 @@ let release_for_compose (policy_set : Compose.t) artifacts =
       policy_set.Compose.exceptions
   in
   Release.build ~client:policy_set.Compose.adapter.Model.id ?role
-    ?project:policy_set.Compose.project ~fragments ~exceptions ~artifacts
-    policy_set.Compose.source
+    ?project:policy_set.Compose.project
+    ~inherit_root:policy_set.Compose.inherit_root ~fragments ~exceptions
+    ~artifacts policy_set.Compose.source
 
 let artifact_triples (artifacts : Render.artifact list) =
   List.map
@@ -657,7 +658,7 @@ let install ~target_root ~repo ~source:_ ~policy_set ~update_pin =
 (* Sync entry points                                                  *)
 (* ------------------------------------------------------------------ *)
 
-let sync ~repo ~client ~role ~project ~source_root ~update_pin =
+let sync ~repo ~client ~role ~project ~inherit_root ~source_root ~update_pin =
   if repo = None && client = None then
     Error
       (Message
@@ -716,6 +717,37 @@ let sync ~repo ~client ~role ~project ~source_root ~update_pin =
                     | Some role -> Some role
                     | None -> Option.bind lock (fun lock -> lock.Lock.role)
                   in
+                  let root_state =
+                    Store.effective_state (Store.target_of_root repo)
+                  in
+                  let inherit_error =
+                    if not inherit_root then None
+                    else
+                      match project with
+                      | None ->
+                          Some
+                            "--inherit-root requires --project inside the \
+                             managed repository"
+                      | Some _ -> (
+                          match root_state with
+                          | Ok (Some state)
+                            when state.Store.client = client_name ->
+                              None
+                          | Ok (Some state) ->
+                              Some
+                                (Printf.sprintf
+                                   "--inherit-root needs a repository root \
+                                    target for client '%s'; the current root \
+                                    target belongs to '%s'"
+                                   client_name state.Store.client)
+                          | _ ->
+                              Some
+                                "--inherit-root needs an installed repository \
+                                 root target; run the root sync first")
+                  in
+                  (match inherit_error with
+                  | Some message -> Error (Message message)
+                  | None ->
                   let target_root =
                     match project with
                     | None -> repo
@@ -723,8 +755,8 @@ let sync ~repo ~client ~role ~project ~source_root ~update_pin =
                   in
                   let resolved =
                     match
-                      Compose.resolve ~repo ?project ?role:role_name
-                        ~client:client_name
+                      Compose.resolve ~repo ?project ~inherit_root
+                        ?role:role_name ~client:client_name
                         ~ignore_lock:(update_pin && repo_has_lock) ?today:None
                         source
                     with
@@ -751,7 +783,7 @@ let sync ~repo ~client ~role ~project ~source_root ~update_pin =
                                       (String.concat ", " fields))))
                       | _ ->
                           install ~target_root ~repo:(Some repo) ~source
-                            ~policy_set ~update_pin))))
+                            ~policy_set ~update_pin)))))
 
 (* ------------------------------------------------------------------ *)
 (* Doctor                                                             *)
@@ -791,6 +823,7 @@ type report = {
   source_files_digest : string option;
   source_release : string option;
   project : string option;
+  inherit_root : bool;
   cached_digests : string list;
   entrypoints : string list;
   coverage : coverage;
@@ -1073,7 +1106,7 @@ let expected_of_candidate ?(stale_hint = None) (policy_set : Compose.t) =
     stale_hint;
   }
 
-let expected_for_repo source repo project role_override =
+let expected_for_repo source repo project inherit_root role_override =
   match Lock.find_in_repo ~repo with
   | Error diagnostics -> Error (Diagnostics diagnostics)
   | Ok lock ->
@@ -1086,7 +1119,8 @@ let expected_for_repo source repo project role_override =
         match lock with Some lock -> lock.Lock.client | None -> None
       in
       (match
-         Compose.resolve ~repo ?project ?role ?client ?today:None source
+         Compose.resolve ~repo ?project ~inherit_root ?role ?client ?today:None
+           source
        with
       | Ok policy_set -> Ok (expected_of_candidate policy_set)
       | Error diagnostics
@@ -1096,8 +1130,8 @@ let expected_for_repo source repo project role_override =
                diagnostics ->
           let client = Option.value client ~default:"generic-agents" in
           (match
-             Compose.resolve ~repo ?project ?role ~client ~ignore_lock:true
-               ?today:None source
+             Compose.resolve ~repo ?project ~inherit_root ?role ~client
+               ~ignore_lock:true ?today:None source
            with
           | Error diagnostics -> Error (Diagnostics diagnostics)
           | Ok policy_set ->
@@ -1160,6 +1194,7 @@ let doctor_to_json (report : report) =
       ("target", `String report.target_kind);
       ("client", option_json report.client);
       ("project", option_json report.project);
+      ("inherit_root", `Bool report.inherit_root);
       ("role", option_json report.role);
       ( "installed",
         `Assoc
@@ -1202,6 +1237,7 @@ let doctor_text (report : report) =
   line "client: %s"
     (Option.value report.client ~default:"(none)");
   line "project: %s" (Option.value report.project ~default:"(none)");
+  line "inherit_root: %b" report.inherit_root;
   line "role: %s" (Option.value report.role ~default:"(none)");
   line "%s" (digest "installed digest" report.installed_digest);
   line "%s" (digest "installed source" report.installed_source_digest);
@@ -1243,7 +1279,7 @@ let doctor_exit (report : report) =
   | Source_unavailable -> 2
   | Stale | Missing | Unmanaged | Hand_edited -> 1
 
-let report_of ~kind ~root ~source_root ~project ~expected =
+let report_of ~kind ~root ~source_root ~project ~inherit_root ~expected =
   let installed = installed_info root in
   let cached = Store.cache_digests () in
   let installed_digest =
@@ -1283,6 +1319,7 @@ let report_of ~kind ~root ~source_root ~project ~expected =
       source_files_digest;
       source_release;
       project;
+      inherit_root;
       cached_digests = cached;
       entrypoints;
       coverage;
@@ -1452,7 +1489,7 @@ let fill_source_release ~source_root report =
             source_release = Some source.Model.policy.release;
           })
 
-let doctor ~repo ~project ~role ~client ~source_root =
+let doctor ~repo ~project ~inherit_root ~role ~client ~source_root =
   match (repo, client) with
   | Some repo, None ->
       let target_root =
@@ -1467,7 +1504,9 @@ let doctor ~repo ~project ~role ~client ~source_root =
             match load_source root with
             | Error diagnostics -> Error (Diagnostics diagnostics)
             | Ok source -> (
-                match expected_for_repo source repo project role with
+                match
+                  expected_for_repo source repo project inherit_root role
+                with
                 | Error error -> Error error
                 | Ok expected -> Ok (Some expected)))
       in
@@ -1476,7 +1515,7 @@ let doctor ~repo ~project ~role ~client ~source_root =
       | Ok expected ->
           (match
              report_of ~kind:"repo" ~root:target_root ~source_root ~project
-               ~expected
+               ~inherit_root ~expected
            with
           | Error error -> Error error
           | Ok report -> Ok (fill_source_release ~source_root report)))
@@ -1503,7 +1542,8 @@ let doctor ~repo ~project ~role ~client ~source_root =
       | Error error -> Error error
       | Ok expected ->
           (match
-             report_of ~kind:"client" ~root ~source_root ~project:None ~expected
+             report_of ~kind:"client" ~root ~source_root ~project:None
+               ~inherit_root:false ~expected
            with
           | Error error -> Error error
           | Ok report -> Ok (fill_source_release ~source_root report)))

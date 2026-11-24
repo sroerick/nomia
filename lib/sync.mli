@@ -20,6 +20,7 @@ val sync :
   client:string option ->
   role:string option ->
   project:string option ->
+  inherit_root:bool ->
   source_root:string ->
   update_pin:bool ->
   (sync_result, error) result
@@ -29,6 +30,8 @@ val sync :
     the reviewable pin. A pin mismatch likewise refuses without [update_pin].
     With [repo], [project] installs the project-scoped release under
     [repo/project] while the single pin remains at [repo/nomia.lock].
+    [inherit_root = true] installs only the project overlay and requires an
+    already-managed root target for the same client.
     User-level sync writes only under
     [$XDG_CONFIG_HOME/nomia/clients/<client>].
 
@@ -70,6 +73,7 @@ type report = {
   source_files_digest : string option;
   source_release : string option;
   project : string option;
+  inherit_root : bool;
   cached_digests : string list;
   entrypoints : string list;
   coverage : coverage;
@@ -80,13 +84,15 @@ type report = {
 val doctor :
   repo:string option ->
   project:string option ->
+  inherit_root:bool ->
   role:string option ->
   client:string option ->
   source_root:string option ->
   (report, error) result
 (** [doctor ~repo ~project ~role ~client ~source_root] reports one state. When
     [repo] and [project] are both set, the managed target is [repo/project] and
-    the pin remains at [repo/nomia.lock]. [source_root = None]
+    the pin remains at [repo/nomia.lock]. [inherit_root] compares the expected
+    project overlay rather than a full nested policy. [source_root = None]
     means discovery failed or the source is absent; an intact installed or
     cached release is then reported as [Offline_last_known_good] rather than
     inventing an empty policy. *)

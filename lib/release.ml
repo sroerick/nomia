@@ -178,8 +178,8 @@ let fragments_json fragments =
          `Assoc [ ("path", `String path); ("digest", `String digest) ])
        fragments)
 
-let build ?client ?role ?project ?(fragments = []) ?exceptions
-    ?(artifacts = []) source =
+let build ?client ?role ?project ?(inherit_root = false) ?(fragments = [])
+    ?exceptions ?(artifacts = []) source =
   let files = sort_files source.files in
   let rules = List.sort compare_rule source.rules in
   let skills = List.sort compare_skill source.skills in
@@ -195,50 +195,55 @@ let build ?client ?role ?project ?(fragments = []) ?exceptions
   (* The digest covers inputs only. Artifact bytes and the manifest's own
      [digest] field are deliberately absent, so writing a header that names
      the digest never changes the digest. *)
+  let inherit_fields =
+    if inherit_root then [ ("inherits_root", `Bool true) ] else []
+  in
   let digest_input =
     `Assoc
-      [
-        ("schema", `String schema);
-        ("compiler", `String source.policy.compiler);
-        ("release", `String source.policy.release);
-        ("source_files", file_list_json files);
-        ( "adapters",
-          `List
-            (List.map
-               (fun (adapter : adapter) ->
-                 `Assoc
-                   [
-                     ("id", `String adapter.id);
-                     ("version", `Int adapter.version);
-                   ])
-               adapters) );
-        ("client", option_string client);
-        ("role", option_string role);
-        ("project", option_string project);
-        ("fragments", fragments_json fragments);
-        ("exceptions", strings exception_ids);
-      ]
+      ([
+         ("schema", `String schema);
+         ("compiler", `String source.policy.compiler);
+         ("release", `String source.policy.release);
+         ("source_files", file_list_json files);
+         ( "adapters",
+           `List
+             (List.map
+                (fun (adapter : adapter) ->
+                  `Assoc
+                    [
+                      ("id", `String adapter.id);
+                      ("version", `Int adapter.version);
+                    ])
+                adapters) );
+         ("client", option_string client);
+         ("role", option_string role);
+         ("project", option_string project);
+         ("fragments", fragments_json fragments);
+         ("exceptions", strings exception_ids);
+       ]
+      @ inherit_fields)
   in
   let digest = Canonical.manifest_digest digest_input in
   let manifest =
     `Assoc
-      [
-        ("schema", `String schema);
-        ("compiler", `String source.policy.compiler);
-        ("release", `String source.policy.release);
-        ("client", option_string client);
-        ("role", option_string role);
-        ("project", option_string project);
-        ("fragments", fragments_json fragments);
-        ("source_files", file_list_json files);
-        ("rules", `List (List.map (rule_json files) rules));
-        ("skills", `List (List.map skill_json skills));
-        ("roles", `List (List.map (role_json files) roles));
-        ("adapters", `List (List.map (adapter_json files) adapters));
-        ("exceptions", strings exception_ids);
-        ("artifacts", `List artifacts);
-        ("digest", `String digest);
-      ]
+      ([
+         ("schema", `String schema);
+         ("compiler", `String source.policy.compiler);
+         ("release", `String source.policy.release);
+         ("client", option_string client);
+         ("role", option_string role);
+         ("project", option_string project);
+         ("fragments", fragments_json fragments);
+         ("source_files", file_list_json files);
+         ("rules", `List (List.map (rule_json files) rules));
+         ("skills", `List (List.map skill_json skills));
+         ("roles", `List (List.map (role_json files) roles));
+         ("adapters", `List (List.map (adapter_json files) adapters));
+         ("exceptions", strings exception_ids);
+         ("artifacts", `List artifacts);
+         ("digest", `String digest);
+       ]
+      @ inherit_fields)
   in
   { manifest; digest }
 

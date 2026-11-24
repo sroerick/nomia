@@ -46,8 +46,10 @@ let load_source () =
            (List.map (fun (diagnostic : M.diagnostic) -> diagnostic.code)
               diagnostics))
 
-let resolve_ok ?repo ?project ?role ?client source =
-  match Co.resolve ?repo ?project ?role ?client ~today source with
+let resolve_ok ?repo ?project ?inherit_root ?role ?client source =
+  match
+    Co.resolve ?repo ?project ?inherit_root ?role ?client ~today source
+  with
   | Ok policy_set -> policy_set
   | Error diagnostics ->
       Alcotest.failf "resolve: %s"
@@ -119,7 +121,8 @@ let exception_ids (policy_set : Co.t) =
 
 let release_with_artifacts (policy_set : Co.t) artifacts =
   R.build ~client:policy_set.Co.adapter.id ?role:(role_name policy_set)
-    ?project:policy_set.Co.project ~fragments:(fragments policy_set)
+    ?project:policy_set.Co.project
+    ~inherit_root:policy_set.Co.inherit_root ~fragments:(fragments policy_set)
     ~exceptions:(exception_ids policy_set)
     ~artifacts:
       (List.map
@@ -457,7 +460,27 @@ let test_project_fragments_render_in_order () =
         (index_of agents "Wyo-wide repository"
         < index_of agents "Tuna-specific instructions");
       Alcotest.(check bool) "sibling text is absent" false
-        (contains_sub agents "Pricklypear uses the habitat"))
+        (contains_sub agents "Pricklypear uses the habitat");
+      let overlay =
+        resolve_ok ~repo ~project:"tuna" ~inherit_root:true
+          ~client:"opencode" source
+      in
+      let overlay_artifacts = render_ok overlay ~client:"opencode" in
+      Alcotest.(check bool) "overlay has no skills" true
+        (artifact_opt ".opencode/skills/verify-change/SKILL.md"
+           overlay_artifacts
+        = None);
+      Alcotest.(check bool) "overlay has no client config" true
+        (artifact_opt "opencode.json" overlay_artifacts = None);
+      let overlay_agents = contents_of "AGENTS.md" overlay_artifacts in
+      Alcotest.(check bool) "overlay excludes the organization core" false
+        (contains_sub overlay_agents "# Organization agent policy");
+      Alcotest.(check bool) "overlay excludes root prose" false
+        (contains_sub overlay_agents "Wyo-wide repository instructions.");
+      Alcotest.(check bool) "overlay carries project prose" true
+        (contains_sub overlay_agents "Tuna-specific instructions.");
+      Alcotest.(check bool) "overlay records inheritance" true
+        (contains_sub overlay_agents "inherit-root=true"))
 
 (* ------------------------------------------------------------------ *)
 (* Determinism and manifest consistency                                *)

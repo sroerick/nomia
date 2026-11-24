@@ -199,30 +199,41 @@ mkdir -p "$PROJECT_REPO/tuna" "$PROJECT_REPO/pp"
 printf 'Wyo-wide repository instructions.\n' > "$PROJECT_REPO/AGENTS.fragment.md"
 printf 'Tuna-specific instructions.\n' > "$PROJECT_REPO/tuna/AGENTS.fragment.md"
 printf 'Pricklypear-specific instructions.\n' > "$PROJECT_REPO/pp/AGENTS.fragment.md"
-if "$AGENTCTL" sync --repo "$PROJECT_REPO" --project tuna \
-     --client generic-agents --source "$SOURCE" --update-pin >/dev/null 2>&1 &&
+if "$AGENTCTL" sync --repo "$PROJECT_REPO" --client generic-agents \
+     --source "$SOURCE" --update-pin >/dev/null 2>&1 &&
+   "$AGENTCTL" sync --repo "$PROJECT_REPO" --project tuna --inherit-root \
+     --client generic-agents --source "$SOURCE" >/dev/null 2>&1 &&
    [ -f "$PROJECT_REPO/nomia.lock" ] &&
    [ ! -f "$PROJECT_REPO/tuna/nomia.lock" ] &&
+   [ -f "$PROJECT_REPO/.nomia/state.json" ] &&
    [ -f "$PROJECT_REPO/tuna/.nomia/state.json" ] &&
    [ -L "$PROJECT_REPO/tuna/AGENTS.md" ]; then
-  ok "project sync uses one root pin and installs under the project"
+  ok "root and project overlay share one pin"
 else
-  bad "project sync layout is wrong"
+  bad "root/project overlay layout is wrong"
 fi
-if grep -q 'Wyo-wide repository instructions' "$PROJECT_REPO/tuna/AGENTS.md" &&
+if grep -q 'Wyo-wide repository instructions' "$PROJECT_REPO/AGENTS.md" &&
    grep -q 'Tuna-specific instructions' "$PROJECT_REPO/tuna/AGENTS.md" &&
-   ! grep -q 'Pricklypear-specific instructions' "$PROJECT_REPO/tuna/AGENTS.md"; then
-  ok "project render composes root and selected project without siblings"
+   ! grep -q 'Wyo-wide repository instructions' "$PROJECT_REPO/tuna/AGENTS.md" &&
+   ! grep -q 'Pricklypear-specific instructions' "$PROJECT_REPO/tuna/AGENTS.md" &&
+   ! grep -q '# Organization agent policy' "$PROJECT_REPO/tuna/AGENTS.md"; then
+  ok "project overlay carries only its delta and excludes siblings"
 else
-  bad "project composition leaked or omitted a fragment"
+  bad "project overlay composition leaked or duplicated policy"
 fi
-if "$AGENTCTL" doctor --repo "$PROJECT_REPO" --project tuna \
+if [ ! -e "$PROJECT_REPO/tuna/.opencode" ]; then
+  ok "project overlay does not duplicate root skills"
+else
+  bad "project overlay duplicated root skills"
+fi
+if "$AGENTCTL" doctor --repo "$PROJECT_REPO" --project tuna --inherit-root \
      --source "$SOURCE" --json > "$TMP/project-doctor.json" 2>/dev/null &&
    grep -Eq '"state":"(current|partial)"' "$TMP/project-doctor.json" &&
-   grep -q '"project":"tuna"' "$TMP/project-doctor.json"; then
-  ok "project doctor reports the selected project"
+   grep -q '"project":"tuna"' "$TMP/project-doctor.json" &&
+   grep -q '"inherit_root":true' "$TMP/project-doctor.json"; then
+  ok "project doctor reports the overlay"
 else
-  bad "project doctor did not report the selected project"
+  bad "project doctor did not report the overlay"
 fi
 
 # An unmanaged target is never overwritten.
