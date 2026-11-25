@@ -1,4 +1,4 @@
-<!-- nomia:generated release=0.2.0 digest=sha256:14183adde1c22a02924466584e29c26466b4d8f0b7874d576d604d904c63c32f -->
+<!-- nomia:generated release=0.2.0 digest=sha256:aa4f3b2c119405d11cac3970264a0952c734f94ab8a8022d2e4885a1f147faa8 -->
 <!-- Edit the reviewed nomia source, not this generated file. -->
 
 # Organization agent policy (release 0.2.0)
@@ -39,6 +39,23 @@ an already-installed package covers the need.
 
 This rule is advisory. It guides judgment; it is not a mechanical limit on the
 size of a justified change.
+
+## engineering.stability (should)
+Versions follow SemVer: MAJOR counts breaking changes, MINOR adds features,
+PATCH fixes bugs, and `0.x` promises nothing. Maturity is a separate stability
+label, declared in the project's book or `AGENTS.fragment.md`:
+
+- `experimental` — dogfooded and unstable. Propose improvements freely,
+  including breaking ones.
+- `beta` — shape mostly settled. Propose improvements; name any break and
+  what it costs callers.
+- `stable` — do not break the API or userland. A break needs a major bump and
+  an owner decision; propose it, do not make it.
+- `lts` — stable with support commitments. Default to fixes only.
+- `deprecated` — point to the replacement; do not extend.
+
+With no label, treat a `0.x` version as `beta` and anything else as `stable`,
+and say the label is missing.
 
 ## engineering.surface-blockers (must)
 When missing authority, conflicting instructions, or unavailable verification
