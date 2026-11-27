@@ -1,4 +1,4 @@
-<!-- nomia:generated release=0.2.0 digest=sha256:83edb5ce05e19e008d7e62181fb7ad561a7467ab417f8e166c68e6c9f35e1a0b -->
+<!-- nomia:generated release=0.2.0 digest=sha256:68e0a61ccc813ac2e539ad72b875e93c79ffa33bbc77ed8d41ef3a5d8f90aef8 -->
 <!-- Edit the reviewed nomia source, not this generated file. -->
 
 # Organization agent policy (release 0.2.0)
