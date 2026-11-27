@@ -134,4 +134,9 @@ receipts "$tmp/r-none.json" >/dev/null || fail "receiptless command failed recei
 # without --receipts the receipts are ignored: no verify, no failure
 if "$script" "$tmp/r-bad.json" >/dev/null 2>&1; then :; else fail "completeness check changed without --receipts"; fi
 
+# 14 fixture assertions above; each aborts the suite on failure, so this
+# line only prints when all of them passed.  The gate-receipt adapter reads
+# it (run = passed + failed + skipped); keep the count in step with the
+# assertions when a case is added.
+echo "COUNTS run=14 passed=14 failed=0 skipped=0"
 echo "review-change script fixtures: PASS"
