@@ -34,6 +34,10 @@ rules:
 4. Re-run read-only checks when practical. Do not edit the author's work.
 5. Validate the author's evidence with
    `scripts/check-evidence.sh EVIDENCE.json` when the report is structured.
+   A command may carry a `receipt` (the claim path a gate receipt minted);
+   `--receipts` resolves each with `claims.sh verify` and fails on a
+   MISMATCH, an unresolvable receipt, or a verdict that disagrees with the
+   claimed exit or pass.
 6. Write a verdict per criterion and one overall verdict:
    `APPROVE` or `REQUEST-CHANGES`. Name residual risks and unrun checks.
    A harness failure is not a code failure; record it as unrun.
